@@ -28,6 +28,8 @@ result-chat.json
 /docs/*
 !/docs/production-deployment.md
 !/docs/releases/
+!/docs/osinara-household-plan.md
+!/docs/osinara-development-steps.md
 
 # Eve and Workflow Postgres world are our fork (vendor/): their built code is the source.
 !/vendor/**/dist
