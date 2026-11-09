@@ -24,6 +24,13 @@ function fixture() {
 }
 
 describe("readDutySheet", () => {
+  it("returns a formula-mode snapshot for guarded write planning", async () => {
+    const f = fixture();
+    const result = await f.read(f.source, f.ctx, undefined, { formulas: true });
+    expect(JSON.parse(f.deps.execute.mock.calls[0][0].argv[5]).valueRenderOption).toBe("FORMULA");
+    expect(result.response).toEqual(f.raw);
+  });
+
   it("reads nine ranges without retaining the owner connection and rechecks before returning", async () => {
     const f = fixture();
     let locked = false;
