@@ -1,0 +1,37 @@
+{
+  "mode": "imported",
+  "fromDate": "2026-10-01",
+  "schedules": [
+    {
+      "id": "nov-02-v1", "date": "2026-11-02", "version": 1, "status": "approved",
+      "assignments": [
+        { "residentId": "r01", "objectId": "dining", "credit": 1 },
+        { "residentId": "r02", "objectId": "dining", "credit": 1 },
+        { "residentId": "r04", "objectId": "floor-1", "credit": 1 },
+        { "residentId": "r05", "objectId": "laundry", "credit": 1 },
+        { "residentId": "r06", "objectId": "administration", "credit": 1 }
+      ]
+    },
+    {
+      "id": "nov-06-v1", "date": "2026-11-06", "version": 1, "status": "superseded",
+      "assignments": [{ "residentId": "r10", "objectId": "floor-1", "credit": 1 }]
+    },
+    {
+      "id": "nov-06-v2", "date": "2026-11-06", "version": 2, "status": "approved",
+      "assignments": [
+        { "residentId": "r01", "objectId": "administration", "credit": 1 },
+        { "residentId": "r04", "objectId": "floor-1", "credit": 1 },
+        { "residentId": "r08", "objectId": "dining", "credit": 1 },
+        { "residentId": "r09", "objectId": "dining", "credit": 1 }
+      ]
+    },
+    {
+      "id": "nov-07-v1", "date": "2026-11-07", "version": 1, "status": "draft",
+      "assignments": [{ "residentId": "r10", "objectId": "floor-1", "credit": 1 }]
+    },
+    {
+      "id": "nov-08-v1", "date": "2026-11-08", "version": 1, "status": "cancelled",
+      "assignments": [{ "residentId": "r02", "objectId": "administration", "credit": 1 }]
+    }
+  ]
+}
