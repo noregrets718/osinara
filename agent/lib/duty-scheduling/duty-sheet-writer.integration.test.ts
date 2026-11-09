@@ -107,7 +107,8 @@ async function setup() {
 
   it("allows only one attempt for concurrent calls with the same operation ID", async () => {
     const f = await setup();
-    await Promise.all([f.write(f.input, f.evidence, f.ctx), f.write(f.input, f.evidence, f.ctx)]);
+    const results = await Promise.allSettled([f.write(f.input, f.evidence, f.ctx), f.write(f.input, f.evidence, f.ctx)]);
+    expect(results.some((result) => result.status === "fulfilled")).toBe(true);
     expect(f.execute).toHaveBeenCalledTimes(1);
     expect(await dutySheetWriteLog.get(f.family.auth, f.input.operationId)).toMatchObject({ state: "applied" });
     await expect(f.write({ ...f.input, expectedSourceHash: "0".repeat(64) }, f.evidence, f.ctx)).rejects.toThrow(/AGENT_DUTY_SHEET_OPERATION_CONFLICT/u);

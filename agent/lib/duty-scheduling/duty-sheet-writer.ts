@@ -9,10 +9,12 @@ import { readDutySheet } from "./duty-sheet-reader.js";
 import { dutyApprovalEvidenceSchema, type DutyApprovalEvidence } from "./duty-snapshot.js";
 import { dutySheetWriteLog } from "./duty-sheet-write-log.js";
 import { withDutyOwner } from "./duty-storage.js";
+import { dutySheetWorkerContext, withDutySheetWorker } from "./duty-sheet-worker.js";
 
 interface Dependencies {
   owner: typeof requirePrivateTelegramOwner; read: typeof readDutySheet; execute: typeof executeGoogleWorkspace;
   log: typeof dutySheetWriteLog; withOwner: typeof withDutyOwner;
+  withWorker?: typeof withDutySheetWorker;
 }
 
 export function createDutySheetWriter(dependencies: Dependencies) {
@@ -21,33 +23,39 @@ export function createDutySheetWriter(dependencies: Dependencies) {
     const input = parseDutySheetWrite(raw);
     const approvedRaw = structuredClone(raw);
     const approvedEvidence = dutyApprovalEvidenceSchema.parse(evidence);
-    const claim = await dependencies.log.claim(auth, input, approvedRaw, approvedEvidence);
-    if (!claim.claimed) return claim.result;
-    let dispatched = false;
-    let recordedSuccess = false;
-    try {
-      const current = await dependencies.read(input.source, ctx, undefined, { formulas: true });
-      const plan = planDutySheetWrite(input, current.response);
-      await dependencies.log.start(auth, input, approvedRaw, approvedEvidence, plan);
-      dispatched = true; // Durable 'writing' is committed before calling the provider, including crashes here.
-      const result = await dependencies.execute({ argv: plan.argv, expectedProfileRef: input.source.profileRef }, ctx);
-      if (result.kind !== "mutation" || !result.completed || result.profileRef !== input.source.profileRef || result.scope !== "personal") {
-        throw new AppError("AGENT_DUTY_SHEET_WRITE_UNVERIFIED", "Ответ записи не подтверждает выбранную таблицу и профиль");
+    return (dependencies.withWorker ?? withDutySheetWorker)(input.operationId, async (worker) => {
+      const claim = await dependencies.log.claim(auth, input, approvedRaw, approvedEvidence);
+      if (!claim.claimed) return claim.result;
+      const activeContext = dutySheetWorkerContext(ctx, worker);
+      let dispatched = false;
+      let recordedSuccess = false;
+      try {
+        const current = await dependencies.read(input.source, activeContext, undefined, { formulas: true });
+        const plan = planDutySheetWrite(input, current.response);
+        await worker.check();
+        await dependencies.log.start(auth, input, approvedRaw, approvedEvidence, plan);
+        dispatched = true; // Durable 'writing' is committed before calling the provider, including crashes here.
+        await worker.check();
+        const result = await dependencies.execute({ argv: plan.argv, expectedProfileRef: input.source.profileRef }, activeContext);
+        if (result.kind !== "mutation" || !result.completed || result.profileRef !== input.source.profileRef || result.scope !== "personal") {
+          throw new AppError("AGENT_DUTY_SHEET_WRITE_UNVERIFIED", "Ответ записи не подтверждает выбранную таблицу и профиль");
+        }
+        const observed = await dependencies.read(input.source, activeContext, undefined, { formulas: true });
+        await worker.check();
+        if (dutySheetDataHash(observed) !== plan.expectedDataHash) throw new AppError("AGENT_DUTY_SHEET_WRITE_UNVERIFIED", "Результат таблицы отличается от подтверждённого изменения");
+        const saved = await dependencies.log.finish(input.operationId, "applied");
+        recordedSuccess = true;
+        // A role revoked during the request must not receive the resulting cell data.
+        return await dependencies.withOwner(auth, async () => saved);
+      } catch (error) {
+        // A committed success is not rewritten if the final access check fails.
+        if (recordedSuccess) throw error;
+        const code = error instanceof AppError ? error.code : "AGENT_DUTY_SHEET_EXECUTION_FAILED";
+        const state = dispatched ? "unknown" : code === "AGENT_DUTY_SHEET_CONFLICT" ? "conflict" : "failed";
+        const saved = await dependencies.log.finish(input.operationId, state, code);
+        return await dependencies.withOwner(auth, async () => saved);
       }
-      const observed = await dependencies.read(input.source, ctx, undefined, { formulas: true });
-      if (dutySheetDataHash(observed) !== plan.expectedDataHash) throw new AppError("AGENT_DUTY_SHEET_WRITE_UNVERIFIED", "Результат таблицы отличается от подтверждённого изменения");
-      const saved = await dependencies.log.finish(input.operationId, "applied");
-      recordedSuccess = true;
-      // A role revoked during the request must not receive the resulting cell data.
-      return await dependencies.withOwner(auth, async () => saved);
-    } catch (error) {
-      // A committed success is not rewritten if the final access check fails.
-      if (recordedSuccess) throw error;
-      const code = error instanceof AppError ? error.code : "AGENT_DUTY_SHEET_EXECUTION_FAILED";
-      const state = dispatched ? "unknown" : code === "AGENT_DUTY_SHEET_CONFLICT" ? "conflict" : "failed";
-      const saved = await dependencies.log.finish(input.operationId, state, code);
-      return await dependencies.withOwner(auth, async () => saved);
-    }
+    });
   };
 }
 
