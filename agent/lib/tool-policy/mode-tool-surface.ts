@@ -434,6 +434,7 @@ const TRUSTED_SCHEDULED_SURFACES: Readonly<Record<"family" | "private", ToolMap>
     const {
       manage_behavior_preference: _manageBehaviorPreference,
       manage_skill: _manageSkill,
+      manage_duty_schedule: _manageDutySchedule,
       remember: _remember,
       ...readOnlyPromptSurface
     } = surface;
@@ -482,6 +483,7 @@ export function buildSubagentToolSurface(input: ModeToolSurfaceInput): ToolMap {
     generate_image: _generateImage,
     manage_behavior_preference: _manageBehaviorPreference,
     manage_skill: _manageSkill,
+    manage_duty_schedule: _manageDutySchedule,
     remember: _remember,
     // A child works on a fresh context and reports to the root; cards in the chat are the root's.
     send_widget: _sendWidget,
