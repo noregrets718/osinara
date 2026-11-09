@@ -15,7 +15,7 @@ interface Dependencies {
 }
 
 export function createDutySheetReader(dependencies: Dependencies) {
-  return async (rawSource: unknown, ctx: ToolContext, baseline?: DutySheetBaseline) => {
+  return async (rawSource: unknown, ctx: ToolContext, baseline?: DutySheetBaseline, options?: { formulas: true }) => {
     const owner = dependencies.requireOwner(ctx);
     const source = parseDutySheetSource(rawSource);
     const previous = baseline === undefined ? undefined : structuredClone(baseline);
@@ -25,7 +25,7 @@ export function createDutySheetReader(dependencies: Dependencies) {
     const result = await dependencies.execute({
       argv: ["sheets", "spreadsheets", "values", "batchGet", "--params", JSON.stringify({
         spreadsheetId: source.spreadsheetId, ranges: dutySheetRanges(source), majorDimension: "ROWS",
-        valueRenderOption: "UNFORMATTED_VALUE", dateTimeRenderOption: "FORMATTED_STRING",
+        valueRenderOption: options?.formulas ? "FORMULA" : "UNFORMATTED_VALUE", dateTimeRenderOption: "FORMATTED_STRING",
       })], expectedProfileRef: source.profileRef,
     }, ctx);
     return dependencies.withOwner(owner, async () => {
@@ -37,7 +37,7 @@ export function createDutySheetReader(dependencies: Dependencies) {
         throw new AppError("AGENT_DUTY_SHEET_READ_INVALID", "Google вернул некорректный JSON вместо таблицы");
       }
       const preview = previewDutySheetImport(source, response, previous);
-      return { ...preview, owner: { familyId: owner.familyId, userId: owner.userId } };
+      return { ...preview, response, owner: { familyId: owner.familyId, userId: owner.userId } };
     });
   };
 }

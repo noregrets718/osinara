@@ -50,7 +50,7 @@ export function approvalInput(stored: StoredDutyVersion): DutyApprovalInput {
 }
 
 /** Simulates an already consumed callback receipt; never sends Telegram requests. */
-export async function recordDutyApproval(fixture: DutyFixture, input: DutyApprovalInput) {
+export async function recordDutyApproval(fixture: DutyFixture, input: unknown, toolName: string = DUTY_APPROVAL_TOOL) {
   requireDutyTestDatabase();
   const eveSessionId = `duty-test-${randomUUID()}`;
   const toolCallId = randomUUID();
@@ -67,7 +67,7 @@ export async function recordDutyApproval(fixture: DutyFixture, input: DutyApprov
         telegram_message_id, expected_telegram_user_id, callback_data, consumed_at,
         selected_option_id, selected_option_label, tool_call_id, tool_name, tool_input_hash, request_kind, prompt_text, callback_options)
      VALUES ($1, $2, $3, $4, 'private', $5, $4, ARRAY['approve'], now(), 'approve', 'Утвердить', $3, $6, $7, 'tool-approval', 'Учебное подтверждение', '[]'::jsonb)`,
-    [applicationSessionId, eveSessionId, toolCallId, fixture.auth.telegramChatId, randomInt(1, 2_000_000_000), DUTY_APPROVAL_TOOL, sha256Json(input)],
+    [applicationSessionId, eveSessionId, toolCallId, fixture.auth.telegramChatId, randomInt(1, 2_000_000_000), toolName, sha256Json(input)],
   );
   return { applicationSessionId, eveSessionId, toolCallId };
 }
