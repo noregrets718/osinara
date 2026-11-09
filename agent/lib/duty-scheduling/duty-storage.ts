@@ -2,12 +2,30 @@
 import type { PoolClient } from "pg";
 
 import { AppError } from "../app-error.js";
+import { database } from "../database.js";
 import type { PrivateTelegramOwner } from "../family-context.js";
 import { requireLockedOwner } from "../family-repository-checks.js";
 import { sha256Json } from "../json-hash.js";
 import type { DutyData } from "./duty-data.js";
 import { parseDutyHistory, type DutyHistory } from "./duty-history.js";
 import { DUTY_APPROVAL_TOOL, type DutyApprovalEvidence, type DutyApprovalInput } from "./duty-snapshot.js";
+
+/** Keep the verified owner role locked until the complete operation has finished. */
+export async function withDutyOwner<T>(auth: PrivateTelegramOwner, action: (client: PoolClient) => Promise<T>): Promise<T> {
+  const client = await database().connect();
+  try {
+    await client.query("BEGIN");
+    await requireDutyOwner(client, auth);
+    const value = await action(client);
+    await client.query("COMMIT");
+    return value;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 
 export async function requireDutyOwner(client: PoolClient, auth: PrivateTelegramOwner): Promise<void> {
   if (auth.role !== "owner") throw new AppError("AGENT_OWNER_REQUIRED", "Это действие доступно только владельцу");

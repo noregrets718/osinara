@@ -4,7 +4,6 @@ import type { PoolClient } from "pg";
 import { z } from "zod";
 
 import { AppError } from "../app-error.js";
-import { database } from "../database.js";
 import type { PrivateTelegramOwner } from "../family-context.js";
 import { prepareDutyDraft } from "./duty-allocation.js";
 import { dutyDateSchema, parseDutyData } from "./duty-data.js";
@@ -13,28 +12,12 @@ import {
   DUTY_VERSION_COLUMNS, dutyApprovalEvidenceSchema, dutyApprovalInputSchema, hashDutyJson, presentDutyVersion,
   type DutyApprovalEvidence, type DutyApprovalInput, type DutySnapshot, type DutyVersionRow,
 } from "./duty-snapshot.js";
-import { dutyApprovalProof, lockDutyDay, requireDutyApproval, requireDutyGroup, requireDutyOwner, storedDutyHistory } from "./duty-storage.js";
+import { dutyApprovalProof, lockDutyDay, requireDutyApproval, requireDutyGroup, storedDutyHistory, withDutyOwner as transaction } from "./duty-storage.js";
 
 const saveSchema = z.object({
   groupId: z.uuid(), date: dutyDateSchema, operationKey: z.string().trim().min(1).max(300), data: z.unknown(), history: z.unknown(),
 }).strict();
 type SaveDutyInput = z.infer<typeof saveSchema>;
-
-async function transaction<T>(auth: PrivateTelegramOwner, action: (client: PoolClient) => Promise<T>): Promise<T> {
-  const client = await database().connect();
-  try {
-    await client.query("BEGIN");
-    await requireDutyOwner(client, auth);
-    const value = await action(client);
-    await client.query("COMMIT");
-    return value;
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
-}
 
 async function currentApproved(client: PoolClient, familyId: string, chatId: string, date: string): Promise<string | null> {
   const result = await client.query<{ id: string }>(
