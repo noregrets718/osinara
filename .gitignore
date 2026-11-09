@@ -37,6 +37,7 @@ result-chat.json
 !/docs/duty-allocation-step-5.md
 !/docs/duty-storage-step-6.md
 !/docs/duty-sheets-step-7-1.md
+!/docs/duty-sheets-step-7-2.md
 
 # Eve and Workflow Postgres world are our fork (vendor/): their built code is the source.
 !/vendor/**/dist
