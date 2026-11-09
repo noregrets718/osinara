@@ -113,6 +113,7 @@ export type DutyObject = DutyData["objects"][number];
 export type DutyPeriod = z.infer<typeof periodSchema>;
 export type DutyShiftState = z.infer<typeof shiftSchema>["state"];
 export type DutyAvailabilityKind = keyof DutyData["rules"]["availability"];
+export { dateSchema as dutyDateSchema, idSchema as dutyIdSchema };
 
 /** A requested day uses the same calendar-date contract as imported rows. */
 export function parseDutyDate(value: unknown): string {
