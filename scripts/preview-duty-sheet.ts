@@ -5,7 +5,7 @@ import { createDutySheetSource } from "../agent/lib/duty-scheduling/duty-sheet-f
 import { previewDutySheetImport } from "../agent/lib/duty-scheduling/duty-sheet-import.js";
 
 function json(path: string | URL) { return JSON.parse(readFileSync(path, "utf8")); }
-const responsePath = process.argv[2] ?? new URL("../agent/lib/duty-scheduling/fixtures/sheets-example.json", import.meta.url);
+const responsePath = process.argv[2] ?? new URL("../examples/duty-scheduling/sheets-example.json", import.meta.url);
 const source = process.argv[3] ? json(process.argv[3]) : createDutySheetSource("duty-example-sheet", "fictional-profile");
 const previous = process.argv[4] ? json(process.argv[4]) : undefined;
 const preview = previewDutySheetImport(source, json(responsePath), previous);

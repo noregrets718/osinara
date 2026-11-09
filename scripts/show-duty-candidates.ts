@@ -9,8 +9,8 @@ import { parseDutyHistory } from "../agent/lib/duty-scheduling/duty-history.js";
 try {
   const date = parseDutyDate(process.argv[2]);
   const objectId = process.argv[3];
-  const dataPath = process.argv[4] ?? new URL("../agent/lib/duty-scheduling/fixtures/example.json", import.meta.url);
-  const historyPath = process.argv[5] ?? new URL("../agent/lib/duty-scheduling/fixtures/history.json", import.meta.url);
+  const dataPath = process.argv[4] ?? new URL("../examples/duty-scheduling/example.json", import.meta.url);
+  const historyPath = process.argv[5] ?? new URL("../examples/duty-scheduling/history.json", import.meta.url);
   const data = parseDutyData(JSON.parse(readFileSync(dataPath, "utf8")));
   const history = parseDutyHistory(JSON.parse(readFileSync(historyPath, "utf8")), data);
   const result = rankDutyCandidates(data, history, objectId ?? "", date);

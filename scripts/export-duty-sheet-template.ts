@@ -8,7 +8,7 @@ import { previewDutySheetImport } from "../agent/lib/duty-scheduling/duty-sheet-
 
 const directory = resolve(process.argv[2] ?? ".tmp/duty-sheet-template");
 const source = createDutySheetSource("duty-example-sheet", "fictional-profile");
-const raw = JSON.parse(readFileSync(new URL("../agent/lib/duty-scheduling/fixtures/sheets-example.json", import.meta.url), "utf8"));
+const raw = JSON.parse(readFileSync(new URL("../examples/duty-scheduling/sheets-example.json", import.meta.url), "utf8"));
 previewDutySheetImport(source, raw);
 const { response } = readDutySheetTables(source, raw);
 await mkdir(directory, { recursive: true });

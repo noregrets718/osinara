@@ -21,7 +21,7 @@ const fixtures: DutyFixture[] = [];
 async function setup() {
   const family = await createDutyFixture();
   fixtures.push(family);
-  const remote = JSON.parse(readFileSync(new URL("./fixtures/sheets-example.json", import.meta.url), "utf8"));
+  const remote = JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/sheets-example.json", import.meta.url), "utf8"));
   const source = createDutySheetSource("duty-example-sheet", randomUUID());
   const { input, plan } = prepareDutySheetChange(source, remote, [{ action: "upsert", section: "residents", key: "r01", values: { lastName: "НоваяФамилия" } }]);
   const evidence = await recordDutyApproval(family, input, DUTY_SHEET_WRITE_TOOL);

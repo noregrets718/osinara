@@ -7,7 +7,7 @@ import { parseDutyData, type DutyData } from "./duty-data.js";
 import { parseDutyHistory } from "./duty-history.js";
 
 function data() {
-  const source = JSON.parse(readFileSync(new URL("./fixtures/example.json", import.meta.url), "utf8"));
+  const source = JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/example.json", import.meta.url), "utf8"));
   const parsed = parseDutyData(source);
   return parseDutyData({
     ...parsed,

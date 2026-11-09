@@ -13,7 +13,7 @@ function object(id: string, people = 1, periods: DutyPeriod[] = ["morning", "eve
 }
 
 function data() {
-  const source = parseDutyData(JSON.parse(readFileSync(new URL("./fixtures/example.json", import.meta.url), "utf8")));
+  const source = parseDutyData(JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/example.json", import.meta.url), "utf8")));
   return parseDutyData({ ...source, residents: source.residents.slice(0, 3).map((resident) => ({ ...resident, workSchedule: "five_two", activeFrom: "2020-01-01" })),
     objects: [object("a"), object("b")], workShifts: [], exceptions: [], calendarOverrides: [{ date, isDayOff: true }] });
 }
@@ -28,8 +28,8 @@ function assignments(draft: ReturnType<typeof prepareDutyDraft>) {
 
 describe("prepareDutyDraft", () => {
   it("fills the fictional household and keeps the dining pair together", () => {
-    const input = parseDutyData(JSON.parse(readFileSync(new URL("./fixtures/example.json", import.meta.url), "utf8")));
-    const saved = parseDutyHistory(JSON.parse(readFileSync(new URL("./fixtures/history.json", import.meta.url), "utf8")), input);
+    const input = parseDutyData(JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/example.json", import.meta.url), "utf8")));
+    const saved = parseDutyHistory(JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/history.json", import.meta.url), "utf8")), input);
     const result = prepareDutyDraft(input, saved, date);
     expect(result).toMatchObject({ filledSlots: 6, requiredSlots: 6, complete: true, canApprove: true });
     const pair = result.objects.find((item) => item.objectId === "dining");

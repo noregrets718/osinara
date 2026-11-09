@@ -7,7 +7,7 @@ import { getDutyObjectsForDate } from "../agent/lib/duty-scheduling/duty-day-obj
 
 try {
   const date = parseDutyDate(process.argv[2]);
-  const path = process.argv[3] ?? new URL("../agent/lib/duty-scheduling/fixtures/example.json", import.meta.url);
+  const path = process.argv[3] ?? new URL("../examples/duty-scheduling/example.json", import.meta.url);
   const data = parseDutyData(JSON.parse(readFileSync(path, "utf8")));
   const result = getDutyObjectsForDate(data.objects, date);
   console.log(`Объекты уборки на ${date}`);

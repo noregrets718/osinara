@@ -6,7 +6,7 @@ import { prepareDutyDraft } from "./duty-allocation.js";
 import { createDutySheetSource, dutySheetRanges, parseDutySheetSource, type DutySheetCell } from "./duty-sheet-format.js";
 import { previewDutySheetImport } from "./duty-sheet-import.js";
 
-function json(name: string) { return JSON.parse(readFileSync(new URL(`./fixtures/${name}.json`, import.meta.url), "utf8")); }
+function json(name: string) { return JSON.parse(readFileSync(new URL(`../../../examples/duty-scheduling/${name}.json`, import.meta.url), "utf8")); }
 type Response = { spreadsheetId: string; valueRanges: { range: string; majorDimension: string; values: DutySheetCell[][] }[] };
 function response(): Response { return json("sheets-example"); }
 function source() { return createDutySheetSource("duty-example-sheet", "fictional-profile"); }
