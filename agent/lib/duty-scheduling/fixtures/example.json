@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "timezone": "Europe/Moscow",
+  "residents": [
+    { "id": "r01", "firstName": "Анна", "lastName": "Примерова", "workSchedule": "five_two", "activeFrom": "2026-11-01" },
+    { "id": "r02", "firstName": "Иван", "lastName": "Учебнов", "workSchedule": "five_two", "activeFrom": "2026-11-01" },
+    { "id": "r03", "firstName": "Ольга", "lastName": "Макетова", "workSchedule": "shift", "activeFrom": "2026-11-01" },
+    { "id": "r04", "firstName": "Пётр", "lastName": "Тестов", "workSchedule": "shift", "activeFrom": "2026-11-01" },
+    { "id": "r05", "firstName": "Мария", "lastName": "Условная", "workSchedule": "shift", "activeFrom": "2026-11-01" },
+    { "id": "r06", "firstName": "Алексей", "lastName": "Образцов", "workSchedule": "shift", "activeFrom": "2026-11-01" },
+    { "id": "r07", "firstName": "Елена", "lastName": "Демонова", "workSchedule": "shift", "activeFrom": "2026-11-01" },
+    { "id": "r08", "firstName": "Николай", "lastName": "Сценариев", "workSchedule": "shift", "activeFrom": "2026-11-01" },
+    { "id": "r09", "firstName": "Дарья", "lastName": "Пробная", "workSchedule": "shift", "activeFrom": "2026-11-01" },
+    { "id": "r10", "firstName": "Сергей", "lastName": "Данных", "workSchedule": "shift", "activeFrom": "2026-11-01" }
+  ],
+  "objects": [
+    { "id": "dining", "name": "Столовая", "people": 2, "samePeriod": true, "periods": ["morning", "evening"], "creditPerPerson": 1, "recurrence": { "everyDays": 1 } },
+    { "id": "floor-1", "name": "Первый этаж", "people": 1, "samePeriod": true, "periods": ["morning"], "creditPerPerson": 1, "recurrence": { "everyDays": 1 } },
+    { "id": "floor-2", "name": "Второй этаж", "people": 1, "samePeriod": true, "periods": ["morning", "evening"], "creditPerPerson": 1, "recurrence": { "everyDays": 2, "anchorDate": "2026-11-09" } },
+    { "id": "floor-3", "name": "Третий этаж", "people": 1, "samePeriod": true, "periods": ["morning", "evening"], "creditPerPerson": 1, "recurrence": { "everyDays": 2, "anchorDate": "2026-11-10" } },
+    { "id": "laundry", "name": "Прачка", "people": 1, "samePeriod": true, "periods": ["evening"], "creditPerPerson": 1, "recurrence": { "everyDays": 1 } },
+    { "id": "administration", "name": "Администрация", "people": 1, "samePeriod": true, "periods": ["evening"], "creditPerPerson": 1, "recurrence": { "everyDays": 1 } }
+  ],
+  "workShifts": [
+    { "residentId": "r03", "date": "2026-11-09", "state": "day" },
+    { "residentId": "r04", "date": "2026-11-09", "state": "night" },
+    { "residentId": "r05", "date": "2026-11-09", "state": "recovery" },
+    { "residentId": "r06", "date": "2026-11-09", "state": "off" },
+    { "residentId": "r07", "date": "2026-11-09", "state": "day" },
+    { "residentId": "r08", "date": "2026-11-09", "state": "night" },
+    { "residentId": "r09", "date": "2026-11-09", "state": "recovery" },
+    { "residentId": "r10", "date": "2026-11-09", "state": "off" }
+  ],
+  "calendarOverrides": [{ "date": "2026-11-14", "isDayOff": false }],
+  "exceptions": [{ "residentId": "r01", "date": "2026-11-15", "morning": false }],
+  "rules": {
+    "version": "initial-1",
+    "weekendDays": [6, 7],
+    "availability": {
+      "five_two_workday": { "morning": false, "evening": true },
+      "five_two_day_off": { "morning": true, "evening": true },
+      "shift_day": { "morning": false, "evening": false },
+      "shift_night": { "morning": true, "evening": false },
+      "shift_recovery": { "morning": false, "evening": true },
+      "shift_off_workday": { "morning": false, "evening": true },
+      "shift_off_day_off": { "morning": true, "evening": true }
+    },
+    "maxAssignmentsPerDay": 1,
+    "lookbackDays": 30,
+    "priorities": ["least_duties", "longest_since_duty", "longest_since_object"],
+    "allowIncompleteSchedules": true
+  }
+}
