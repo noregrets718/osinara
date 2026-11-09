@@ -1,0 +1,128 @@
+{
+  "spreadsheetId": "duty-example-sheet",
+  "valueRanges": [
+    {
+      "range": "'Жильцы'!A1:Z1000",
+      "majorDimension": "ROWS",
+      "values": [
+        ["ID", "Имя", "Фамилия", "График", "Заселение", "Выезд"],
+        ["r01", "Анна", "Примерова", "five_two", "2026-11-01", ""],
+        ["r02", "Иван", "Учебнов", "five_two", "2026-11-01", ""],
+        ["r03", "Ольга", "Макетова", "shift", "2026-11-01", ""],
+        ["r04", "Пётр", "Тестов", "shift", "2026-11-01", ""],
+        ["r05", "Мария", "Условная", "shift", "2026-11-01", ""],
+        ["r06", "Алексей", "Образцов", "shift", "2026-11-01", ""],
+        ["r07", "Елена", "Демонова", "shift", "2026-11-01", ""],
+        ["r08", "Николай", "Сценариев", "shift", "2026-11-01", ""],
+        ["r09", "Дарья", "Пробная", "shift", "2026-11-01", ""],
+        ["r10", "Сергей", "Данных", "shift", "2026-11-01", ""]
+      ]
+    },
+    {
+      "range": "'Объекты'!A1:Z1000",
+      "majorDimension": "ROWS",
+      "values": [
+        ["ID", "Название", "Людей", "Вместе", "Периоды", "Зачёт", "Каждые дней", "Начало цикла"],
+        ["dining", "Столовая", 2, true, "morning,evening", 1, 1, ""],
+        ["floor-1", "Первый этаж", 1, true, "morning", 1, 1, ""],
+        ["floor-2", "Второй этаж", 1, true, "morning,evening", 1, 2, "2026-11-09"],
+        ["floor-3", "Третий этаж", 1, true, "morning,evening", 1, 2, "2026-11-10"],
+        ["laundry", "Прачка", 1, true, "evening", 1, 1, ""],
+        ["administration", "Администрация", 1, true, "evening", 1, 1, ""]
+      ]
+    },
+    {
+      "range": "'Смены'!A1:Z1000",
+      "majorDimension": "ROWS",
+      "values": [
+        ["ID жильца", "Дата", "Смена"],
+        ["r03", "2026-11-09", "day"],
+        ["r04", "2026-11-09", "night"],
+        ["r05", "2026-11-09", "recovery"],
+        ["r06", "2026-11-09", "off"],
+        ["r07", "2026-11-09", "day"],
+        ["r08", "2026-11-09", "night"],
+        ["r09", "2026-11-09", "recovery"],
+        ["r10", "2026-11-09", "off"]
+      ]
+    },
+    {
+      "range": "'Календарь'!A1:Z1000",
+      "majorDimension": "ROWS",
+      "values": [
+        ["Дата", "Выходной"],
+        ["2026-11-14", false]
+      ]
+    },
+    {
+      "range": "'Исключения'!A1:Z1000",
+      "majorDimension": "ROWS",
+      "values": [
+        ["ID жильца", "Дата", "Утро", "Вечер"],
+        ["r01", "2026-11-15", false, ""]
+      ]
+    },
+    {
+      "range": "'Настройки'!A1:Z1000",
+      "majorDimension": "ROWS",
+      "values": [
+        ["Ключ", "Значение"],
+        ["schemaVersion", 1],
+        ["timezone", "Europe/Moscow"],
+        ["rulesVersion", "initial-1"],
+        ["weekendDays", "6,7"],
+        ["maxAssignmentsPerDay", 1],
+        ["lookbackDays", 30],
+        ["priorities", "least_duties,longest_since_duty,longest_since_object"],
+        ["allowIncompleteSchedules", true],
+        ["historyMode", "imported"],
+        ["historyFromDate", "2026-10-01"]
+      ]
+    },
+    {
+      "range": "'Доступность'!A1:Z1000",
+      "majorDimension": "ROWS",
+      "values": [
+        ["Тип дня", "Утро", "Вечер"],
+        ["five_two_workday", false, true],
+        ["five_two_day_off", true, true],
+        ["shift_day", false, false],
+        ["shift_night", true, false],
+        ["shift_recovery", false, true],
+        ["shift_off_workday", false, true],
+        ["shift_off_day_off", true, true]
+      ]
+    },
+    {
+      "range": "'Графики'!A1:Z1000",
+      "majorDimension": "ROWS",
+      "values": [
+        ["ID", "Дата", "Версия", "Статус"],
+        ["nov-02-v1", "2026-11-02", 1, "approved"],
+        ["nov-06-v1", "2026-11-06", 1, "superseded"],
+        ["nov-06-v2", "2026-11-06", 2, "approved"],
+        ["nov-07-v1", "2026-11-07", 1, "draft"],
+        ["nov-08-v1", "2026-11-08", 1, "cancelled"]
+      ]
+    },
+    {
+      "range": "'Назначения'!A1:Z1000",
+      "majorDimension": "ROWS",
+      "values": [
+        ["ID графика", "ID жильца", "ID объекта", "Зачёт"],
+        ["nov-02-v1", "r01", "dining", 1],
+        ["nov-02-v1", "r02", "dining", 1],
+        ["nov-02-v1", "r04", "floor-1", 1],
+        ["nov-02-v1", "r05", "laundry", 1],
+        ["nov-02-v1", "r06", "administration", 1],
+        ["nov-06-v1", "r10", "floor-1", 1],
+        ["nov-06-v2", "r01", "administration", 1],
+        ["nov-06-v2", "r04", "floor-1", 1],
+        ["nov-06-v2", "r08", "dining", 1],
+        ["nov-06-v2", "r09", "dining", 1],
+        ["nov-07-v1", "r10", "floor-1", 1],
+        ["nov-08-v1", "r02", "administration", 1]
+      ]
+    }
+  ]
+}
