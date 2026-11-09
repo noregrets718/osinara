@@ -8,7 +8,7 @@ import { requireLockedOwner } from "../family-repository-checks.js";
 import { sha256Json } from "../json-hash.js";
 import type { DutyData } from "./duty-data.js";
 import { parseDutyHistory, type DutyHistory } from "./duty-history.js";
-import { DUTY_APPROVAL_TOOL, type DutyApprovalEvidence, type DutyApprovalInput } from "./duty-snapshot.js";
+import { DUTY_APPROVAL_TOOL, dutyApprovalEvidenceSchema, type DutyApprovalEvidence, type DutyApprovalInput } from "./duty-snapshot.js";
 
 /** Keep the verified owner role locked until the complete operation has finished. */
 export async function withDutyOwner<T>(auth: PrivateTelegramOwner, action: (client: PoolClient) => Promise<T>): Promise<T> {
@@ -48,7 +48,12 @@ export async function lockDutyDay(client: PoolClient, familyId: string, chatId: 
 }
 
 export function dutyApprovalProof(auth: PrivateTelegramOwner, input: DutyApprovalInput, evidence: DutyApprovalEvidence) {
-  return { ...evidence, telegramUserId: auth.telegramChatId, toolName: DUTY_APPROVAL_TOOL, toolInputHash: sha256Json(input), approvedByUserId: auth.userId };
+  return dutyOwnerApprovalProof(auth, input, evidence, DUTY_APPROVAL_TOOL);
+}
+
+export function dutyOwnerApprovalProof(auth: PrivateTelegramOwner, input: unknown, evidence: DutyApprovalEvidence, toolName: string) {
+  return { ...dutyApprovalEvidenceSchema.parse(evidence), telegramUserId: auth.telegramChatId, toolName,
+    toolInputHash: sha256Json(input), approvedByUserId: auth.userId };
 }
 
 export async function requireDutyApproval(client: PoolClient, auth: PrivateTelegramOwner, proof: ReturnType<typeof dutyApprovalProof>): Promise<void> {

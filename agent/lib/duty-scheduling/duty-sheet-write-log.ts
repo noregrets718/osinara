@@ -2,20 +2,18 @@
 import { AppError } from "../app-error.js";
 import { database } from "../database.js";
 import type { PrivateTelegramOwner } from "../family-context.js";
-import { sha256Json } from "../json-hash.js";
 import { DUTY_SHEET_WRITE_TOOL, type DutySheetWriteInput, type DutySheetWritePlan } from "./duty-sheet-change.js";
-import { dutyApprovalEvidenceSchema, hashDutyJson, type DutyApprovalEvidence } from "./duty-snapshot.js";
-import { requireDutyApproval, withDutyOwner } from "./duty-storage.js";
+import { hashDutyJson, type DutyApprovalEvidence } from "./duty-snapshot.js";
+import { dutyOwnerApprovalProof, requireDutyApproval, withDutyOwner } from "./duty-storage.js";
 
-export type DutySheetWriteState = "checking" | "writing" | "applied" | "conflict" | "failed" | "unknown";
+export type DutySheetWriteState = "checking" | "writing" | "applied" | "conflict" | "failed" | "unknown" | "reviewed";
 type WriteRow = { id: string; family_id: string; created_by: string | null; request_hash: string; input: DutySheetWriteInput;
   state: DutySheetWriteState; plan: unknown; error_code: string | null; approval_evidence: unknown };
 export type DutySheetWriteResult = { operationId: string; state: DutySheetWriteState; completed: boolean; retryAllowed: false; plan: unknown; errorCode: string | null };
 
 function proof(auth: PrivateTelegramOwner, raw: unknown, evidence: DutyApprovalEvidence) {
   // The common guard accepts the same proof shape; this operation has its own tool name and exact input hash.
-  return { ...dutyApprovalEvidenceSchema.parse(evidence), telegramUserId: auth.telegramChatId,
-    toolName: DUTY_SHEET_WRITE_TOOL, toolInputHash: sha256Json(raw), approvedByUserId: auth.userId };
+  return dutyOwnerApprovalProof(auth, raw, evidence, DUTY_SHEET_WRITE_TOOL);
 }
 function present(row: WriteRow): DutySheetWriteResult {
   if (hashDutyJson(row.input) !== row.request_hash) throw new AppError("AGENT_DUTY_SHEET_AUDIT_INVALID", "Реквизиты операции не совпадают с её контрольной суммой");
@@ -23,6 +21,14 @@ function present(row: WriteRow): DutySheetWriteResult {
 }
 
 export const dutySheetWriteLog = {
+  async reviewRecord(auth: PrivateTelegramOwner, id: string) {
+    return withDutyOwner(auth, async (client) => {
+      const result = await client.query<WriteRow>("SELECT * FROM duty_sheet_writes WHERE id = $1 AND family_id = $2", [id, auth.familyId]);
+      if (!result.rows[0]) throw new AppError("AGENT_DUTY_SHEET_OPERATION_NOT_FOUND", "Операция записи не найдена");
+      present(result.rows[0]);
+      return { ...result.rows[0] };
+    });
+  },
   async claim(auth: PrivateTelegramOwner, input: DutySheetWriteInput, rawInput: unknown, evidence: DutyApprovalEvidence) {
     const approval = proof(auth, rawInput, evidence);
     return withDutyOwner(auth, async (client) => {
