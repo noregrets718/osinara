@@ -112,6 +112,16 @@ export type DutyResident = DutyData["residents"][number];
 export type DutyObject = DutyData["objects"][number];
 export type DutyPeriod = z.infer<typeof periodSchema>;
 export type DutyShiftState = z.infer<typeof shiftSchema>["state"];
+export type DutyAvailabilityKind = keyof DutyData["rules"]["availability"];
+
+/** A requested day uses the same calendar-date contract as imported rows. */
+export function parseDutyDate(value: unknown): string {
+  const result = dateSchema.safeParse(value);
+  if (!result.success) {
+    throw new AppError("AGENT_DUTY_DATE_INVALID", "Укажите существующую дату в формате YYYY-MM-DD");
+  }
+  return result.data;
+}
 
 /** Validate decoded JSON/table data without disclosing row values in errors. */
 export function parseDutyData(value: unknown): DutyData {
