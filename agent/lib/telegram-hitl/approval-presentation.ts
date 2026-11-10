@@ -20,6 +20,7 @@ import {
 } from "../agent-schedules/agent-schedule-context.js";
 import { AppError } from "../app-error.js";
 import { loadDutySourceApproval } from "../duty-scheduling/duty-source-approval.js";
+import { loadDutyEditApproval } from "../duty-scheduling/duty-edit-approval.js";
 import { clipText, flattenDisplayText } from "../display-text.js";
 import type { BrowserConfirmApprovalSubject } from "../browser/browser-tools-production.js";
 import { loadBrowserConfirmApproval } from "../browser/browser-tools-production.js";
@@ -45,6 +46,7 @@ import {
 } from "./approval-message.js";
 
 interface ApprovalPresentationDependencies {
+  findDutyEdits?(input: unknown, ctx: Pick<SessionContext, "session">): Promise<string>;
   findDutySource?(input: unknown, ctx: Pick<SessionContext, "session">): Promise<string>;
   findBrowserConfirm(input: { epoch: string; n: number }, ctx: Pick<SessionContext, "session">): Promise<BrowserConfirmApprovalSubject>;
   /** The label of the requester's Lavka delivery point, or null when none is chosen. */
@@ -252,6 +254,11 @@ export function createTelegramApprovalPresenter(
 ): TelegramApprovalPresenter {
   return async (request, ctx) => {
     const localized = localizeTelegramInputRequest(request);
+    if (request.display === "confirmation" && request.action.toolName === "apply_duty_sheet_changes") {
+      if (!dependencies.findDutyEdits) throw new AppError("AGENT_APPROVAL_SUBJECT_INVALID", "Не удалось показать подтверждаемые правки");
+      return { ...localized, prompt: await dependencies.findDutyEdits(request.action.input, ctx),
+        options: localized.options?.map((option) => ({ ...option, label: option.id === "approve" ? "Записать правки" : option.label })) };
+    }
     if (request.display === "confirmation" && request.action.toolName === "configure_duty_sheet_source") {
       if (!dependencies.findDutySource) throw new AppError("AGENT_APPROVAL_SUBJECT_INVALID", "Не удалось показать настройку источника");
       return { ...localized, prompt: await dependencies.findDutySource(request.action.input, ctx),
@@ -382,6 +389,7 @@ export function createTelegramApprovalPresenter(
 }
 
 export const presentTelegramApproval = createTelegramApprovalPresenter({
+  findDutyEdits: loadDutyEditApproval,
   findDutySource: loadDutySourceApproval,
   findBrowserConfirm: loadBrowserConfirmApproval,
   findLavkaDeliveryPoint: loadLavkaDeliveryPoint,

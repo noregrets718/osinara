@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
 const AGENT_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
 const EXPECTED_TOOL_MODULES = [
+  "apply_duty_sheet_changes.ts",
   "browser_act.ts",
   "browser_confirm.ts",
   "browser_look.ts",
@@ -31,6 +32,7 @@ const EXPECTED_TOOL_MODULES = [
   "get_memory_source.ts",
   "grocery_cart.ts",
   "import_telegram_attachment.ts",
+  "inspect_duty_sheet_changes.ts",
   "inspect_duty_sheet_source.ts",
   "inspect_workspace_image.ts",
   "list_agent_schedules.ts",
