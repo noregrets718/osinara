@@ -20,7 +20,7 @@ if (enabled) requireDutyTestDatabase();
 const fixtures: DutyFixture[] = [];
 async function setup(state: "fresh" | "checking" | "writing" | "unknown" = "unknown", observedExpected = false) {
   const family = await createDutyFixture(); fixtures.push(family);
-  const remote = JSON.parse(readFileSync(new URL("./fixtures/sheets-example.json", import.meta.url), "utf8"));
+  const remote = JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/sheets-example.json", import.meta.url), "utf8"));
   remote.spreadsheetId = `sheet-${randomUUID()}`;
   const source = createDutySheetSource(remote.spreadsheetId, randomUUID());
   const { input, plan } = prepareDutySheetChange(source, remote, [{ action: "upsert", section: "residents", key: "r01", values: { lastName: "Новая" } }]);

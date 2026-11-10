@@ -6,7 +6,7 @@ import { parseDutyData } from "./duty-data.js";
 import { parseDutyHistory } from "./duty-history.js";
 
 function data() {
-  return parseDutyData(JSON.parse(readFileSync(new URL("./fixtures/example.json", import.meta.url), "utf8")));
+  return parseDutyData(JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/example.json", import.meta.url), "utf8")));
 }
 
 function schedule() {
@@ -19,7 +19,7 @@ function parse(schedules: unknown[]) {
 
 describe("parseDutyHistory", () => {
   it("loads the fictional history including archived and draft versions", () => {
-    const history = parseDutyHistory(JSON.parse(readFileSync(new URL("./fixtures/history.json", import.meta.url), "utf8")), data());
+    const history = parseDutyHistory(JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/history.json", import.meta.url), "utf8")), data());
     if (history.mode === "not_loaded") throw new Error("Expected imported history");
     expect(history.schedules).toHaveLength(5);
     expect(history.schedules.filter((item) => item.status === "approved")).toHaveLength(2);

@@ -22,7 +22,7 @@ try {
   await dutySheetSourceRepository.save(f.auth, configure, await recordDutyApproval(f, configure, DUTY_SOURCE_TOOL));
   await closeDatabase();
   console.log(`Настройка после переподключения: версия ${(await dutySheetSourceRepository.get(f.auth, f.input.groupId)).version}`);
-  const remote = JSON.parse(readFileSync(new URL("../agent/lib/duty-scheduling/fixtures/sheets-example.json", import.meta.url), "utf8"));
+  const remote = JSON.parse(readFileSync(new URL("../examples/duty-scheduling/sheets-example.json", import.meta.url), "utf8"));
   remote.spreadsheetId = source.spreadsheetId;
   const read = async (selected: unknown) => ({ ...previewDutySheetImport(selected, remote), response: structuredClone(remote), owner: { familyId: f.auth.familyId, userId: f.auth.userId } });
   const ctx = { abortSignal: new AbortController().signal } as ToolContext;

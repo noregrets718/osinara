@@ -5,7 +5,7 @@ import { AppError } from "../agent/lib/app-error.js";
 import { prepareDutySheetChange, planDutySheetWrite } from "../agent/lib/duty-scheduling/duty-sheet-change.js";
 import { createDutySheetSource } from "../agent/lib/duty-scheduling/duty-sheet-format.js";
 
-const response = JSON.parse(readFileSync(new URL("../agent/lib/duty-scheduling/fixtures/sheets-example.json", import.meta.url), "utf8"));
+const response = JSON.parse(readFileSync(new URL("../examples/duty-scheduling/sheets-example.json", import.meta.url), "utf8"));
 const source = createDutySheetSource("duty-example-sheet", "fictional-profile");
 const { input, plan } = prepareDutySheetChange(source, response, [
   { action: "upsert", section: "exceptions", key: "r02/2026-11-09", values: { residentId: "r02", date: "2026-11-09", morning: false } },

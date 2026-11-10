@@ -88,7 +88,7 @@ async function fixture() {
   it("reads the saved source and returns its version with the loaded data", async () => {
     const f = await fixture();
     await sources.save(f.auth, f.change, f.evidence);
-    const raw = JSON.parse(readFileSync(new URL("./fixtures/sheets-example.json", import.meta.url), "utf8"));
+    const raw = JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/sheets-example.json", import.meta.url), "utf8"));
     const read = vi.fn(async (_source: unknown) => ({ ...previewDutySheetImport(f.change.source, raw), response: raw, owner: { familyId: f.auth.familyId, userId: f.auth.userId } }));
     const load = createConfiguredDutySheetReader({ owner: () => f.auth, read, sources });
     const result = await load(f.input.groupId, { abortSignal: new AbortController().signal } as ToolContext);
@@ -99,7 +99,7 @@ async function fixture() {
   it("does not return a read from a source switched during the Google request", async () => {
     const f = await fixture();
     await sources.save(f.auth, f.change, f.evidence);
-    const raw = JSON.parse(readFileSync(new URL("./fixtures/sheets-example.json", import.meta.url), "utf8"));
+    const raw = JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/sheets-example.json", import.meta.url), "utf8"));
     const read = vi.fn(async () => {
       const next = { ...f.change, operationId: randomUUID(), expectedVersion: 1 };
       await sources.save(f.auth, next, await recordDutyApproval(f, next, DUTY_SOURCE_TOOL));

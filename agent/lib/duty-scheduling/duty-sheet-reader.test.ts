@@ -9,7 +9,7 @@ import { previewDutySheetImport } from "./duty-sheet-import.js";
 import { createDutySheetReader } from "./duty-sheet-reader.js";
 
 function fixture() {
-  const raw = JSON.parse(readFileSync(new URL("./fixtures/sheets-example.json", import.meta.url), "utf8"));
+  const raw = JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/sheets-example.json", import.meta.url), "utf8"));
   const source = createDutySheetSource("duty-example-sheet", "fixture-profile");
   const owner = { familyId: "fixture-family", userId: "fixture-owner", role: "owner" as const, telegramChatId: "101" };
   const requireOwner = vi.fn().mockReturnValue(owner);

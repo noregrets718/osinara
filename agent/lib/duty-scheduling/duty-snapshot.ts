@@ -17,10 +17,13 @@ export const dutyApprovalEvidenceSchema = z.object({
 }).strict();
 export type DutyApprovalInput = z.infer<typeof dutyApprovalInputSchema>;
 export type DutyApprovalEvidence = z.infer<typeof dutyApprovalEvidenceSchema>;
+export const dutyDraftSourceSchema = z.object({ id: z.uuid(), version: z.number().int().positive(), readHash: z.string().regex(/^[a-f0-9]{64}$/u) }).strict();
+export type DutyDraftSource = z.infer<typeof dutyDraftSourceSchema>;
 
 export type DutySnapshot = Readonly<{
   schemaVersion: 1; id: string; version: number; familyId: string; createdBy: string; baseApprovedId: string | null;
-  destination: Readonly<{ groupId: string; telegramChatId: string }>;
+  destination: Readonly<{ groupId: string; telegramChatId: string; title?: string }>;
+  source?: DutyDraftSource;
   data: DutyData; history: DutyHistory; draft: DutyDraft;
 }>;
 export type StoredDutyVersion = Readonly<{

@@ -30,8 +30,8 @@ export async function createDutyFixture() {
     "INSERT INTO telegram_groups (family_id, telegram_chat_id, title, type, message_mode) VALUES ($1, $2, 'Учебная группа', 'external', 'addressed_only') RETURNING id",
     [familyId, `-100${randomInt(100_000_000, 900_000_000)}`],
   );
-  const data = parseDutyData(JSON.parse(readFileSync(new URL("./fixtures/example.json", import.meta.url), "utf8")));
-  const history = parseDutyHistory(JSON.parse(readFileSync(new URL("./fixtures/history.json", import.meta.url), "utf8")), data);
+  const data = parseDutyData(JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/example.json", import.meta.url), "utf8")));
+  const history = parseDutyHistory(JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/history.json", import.meta.url), "utf8")), data);
   const auth: PrivateTelegramOwner = { familyId, userId: owner.id, role: "owner", telegramChatId: owner.telegram_user_id };
   return {
     auth, member: { ...auth, userId: member.id, role: "member", telegramChatId: member.telegram_user_id } satisfies PrivateTelegramOwner,

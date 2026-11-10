@@ -41,6 +41,7 @@ import listTelegramAttachments from "../tools/list_telegram_attachments.js";
 import manageAgentSchedule from "../tools/manage_agent_schedule.js";
 import manageBehaviorPreference from "../tools/manage_behavior_preference.js";
 import manageExternalGroupSchedule from "../tools/manage_external_group_schedule.js";
+import manageDutySchedule from "../tools/manage_duty_schedule.js";
 import manageFamilyInvitation from "../tools/manage_family_invitation.js";
 import manageGoogleWorkspaceConnection from "../tools/manage_google_workspace_connection.js";
 import manageGmailMessage from "../tools/manage_gmail_message.js";
@@ -137,6 +138,7 @@ export const TRUSTED_MODE_TOOLS: ToolMap = {
 
 /** Owner administration and personal-only surfaces that require the owner's private chat. */
 export const PRIVATE_ONLY_TOOLS: ToolMap = {
+  manage_duty_schedule: manageDutySchedule as unknown as AnyToolDefinition,
   export_memory: exportMemory as unknown as AnyToolDefinition,
   grocery_cart: groceryCart as unknown as AnyToolDefinition,
   manage_shopping_list: manageShoppingList as unknown as AnyToolDefinition,

@@ -20,7 +20,7 @@ const labels: Record<DutyAvailability["basis"], string> = {
 
 try {
   const date = parseDutyDate(process.argv[2]);
-  const path = process.argv[3] ?? new URL("../agent/lib/duty-scheduling/fixtures/example.json", import.meta.url);
+  const path = process.argv[3] ?? new URL("../examples/duty-scheduling/example.json", import.meta.url);
   const data = parseDutyData(JSON.parse(readFileSync(path, "utf8")));
   console.log(`Доступность на ${date} (${data.timezone})`);
   console.table(data.residents.map((resident) => {

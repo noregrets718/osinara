@@ -41,7 +41,7 @@
 | `agent/lib/duty-scheduling/duty-sheet-format.ts` | Настройка листов и столбцов, проверка ответа Google, преобразование значений ячеек |
 | `agent/lib/duty-scheduling/duty-sheet-import.ts` | Сборка данных и истории, проверка связей, предпросмотр отличий |
 | `agent/lib/duty-scheduling/duty-sheet-reader.ts` | Личное чтение владельцем через существующий Google Workspace executor |
-| `agent/lib/duty-scheduling/fixtures/sheets-example.json` | Вымышленный ответ Google с девятью листами |
+| `examples/duty-scheduling/sheets-example.json` | Вымышленный ответ Google с девятью листами |
 | `agent/lib/duty-scheduling/duty-sheet-*.test.ts` | Проверки формата, предпросмотра и доступа |
 | `scripts/preview-duty-sheet.ts` | Предпросмотр из файла без подключения сервисов |
 | `scripts/export-duty-sheet-template.ts` | Выгрузка шаблонов листов в локальные TSV-файлы |
@@ -193,7 +193,7 @@ node --import tsx scripts/export-duty-sheet-template.ts
 
 ```sh
 node --import tsx scripts/preview-duty-sheet.ts \
-  agent/lib/duty-scheduling/fixtures/sheets-example.json \
+  examples/duty-scheduling/sheets-example.json \
   .tmp/duty-sheet-template/source.json
 ```
 

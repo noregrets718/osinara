@@ -6,7 +6,7 @@ import { getDutyAvailability, type DutyAvailability } from "./duty-availability.
 import { parseDutyData, type DutyShiftState } from "./duty-data.js";
 
 function example() {
-  return parseDutyData(JSON.parse(readFileSync(new URL("./fixtures/example.json", import.meta.url), "utf8")));
+  return parseDutyData(JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/example.json", import.meta.url), "utf8")));
 }
 
 const matrix: {

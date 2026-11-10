@@ -7,7 +7,7 @@ import { prepareDutySheetChange, planDutySheetWrite, type DutySheetEdit } from "
 import { createDutySheetSource } from "./duty-sheet-format.js";
 
 function fixture() {
-  const response = JSON.parse(readFileSync(new URL("./fixtures/sheets-example.json", import.meta.url), "utf8"));
+  const response = JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/sheets-example.json", import.meta.url), "utf8"));
   return { response, source: createDutySheetSource("duty-example-sheet", "fixture-profile") };
 }
 function upsert(section: Extract<DutySheetEdit, { action: "upsert" }>["section"], key: string, values: Record<string, string | number | boolean>): DutySheetEdit {

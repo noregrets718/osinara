@@ -5,7 +5,7 @@ import { AppError } from "../agent/lib/app-error.js";
 import { parseDutyData } from "../agent/lib/duty-scheduling/duty-data.js";
 
 try {
-  const path = process.argv[2] ?? new URL("../agent/lib/duty-scheduling/fixtures/example.json", import.meta.url);
+  const path = process.argv[2] ?? new URL("../examples/duty-scheduling/example.json", import.meta.url);
   const data = parseDutyData(JSON.parse(readFileSync(path, "utf8")));
   const shiftWorkers = data.residents.filter((resident) => resident.workSchedule === "shift").length;
   console.log([

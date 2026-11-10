@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { parseDutyData } from "./duty-data.js";
 
 function example() {
-  return parseDutyData(JSON.parse(readFileSync(new URL("./fixtures/example.json", import.meta.url), "utf8")));
+  return parseDutyData(JSON.parse(readFileSync(new URL("../../../examples/duty-scheduling/example.json", import.meta.url), "utf8")));
 }
 
 describe("parseDutyData", () => {

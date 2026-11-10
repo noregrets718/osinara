@@ -16,7 +16,7 @@ JSON-пример описывает внутренний формат обме�
 | Файл | Назначение |
 | --- | --- |
 | `agent/lib/duty-scheduling/duty-data.ts` | Описывает допустимые данные и проверяет их связи |
-| `agent/lib/duty-scheduling/fixtures/example.json` | Вымышленный пример: два жильца 5/2, восемь сменных, шесть объектов |
+| `examples/duty-scheduling/example.json` | Вымышленный пример: два жильца 5/2, восемь сменных, шесть объектов |
 | `agent/lib/duty-scheduling/duty-data.test.ts` | Проверяет корректный ввод и важные ошибки |
 | `scripts/validate-duty-data.ts` | Позволяет проверить пример или свой JSON из терминала |
 

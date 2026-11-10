@@ -32,6 +32,13 @@ function names(input: Parameters<typeof buildModeToolSurface>[0]): string[] {
 }
 
 describe("trusted mode tool surfaces", () => {
+  it("keeps duty schedules in the interactive private root surface only", () => {
+    expect(buildModeToolSurface({ environment: "private" })).toHaveProperty("manage_duty_schedule");
+    expect(buildModeToolSurface({ environment: "family" })).not.toHaveProperty("manage_duty_schedule");
+    expect(buildModeToolSurface({ capabilities: new Set(), environment: "external" })).not.toHaveProperty("manage_duty_schedule");
+    expect(buildModeToolSurface({ environment: "private", scheduledRun: true })).not.toHaveProperty("manage_duty_schedule");
+    expect(buildSubagentToolSurface({ environment: "private" })).not.toHaveProperty("manage_duty_schedule");
+  });
   it("gives a private chat the shared tools plus owner administration only", () => {
     expect(names({ environment: "private" })).toEqual(
       [...TRUSTED_MODE_TOOL_NAMES, ...PRIVATE_ONLY_TOOL_NAMES, ...TURN_INTERJECTION_FRAMEWORK_TOOL_NAMES].sort(),
