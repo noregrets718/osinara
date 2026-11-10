@@ -9,14 +9,17 @@ import { previewDutySheetImport } from "./duty-sheet-import.js";
 import { hashDutyJson } from "./duty-snapshot.js";
 
 export const DUTY_SHEET_WRITE_TOOL = "apply_duty_sheet_changes";
-const writable = z.enum(["residents", "objects", "workShifts", "calendarOverrides", "exceptions", "settings", "availability"]);
+export const dutyWritableSectionSchema = z.enum(["residents", "objects", "workShifts", "calendarOverrides", "exceptions", "settings", "availability"]);
+const writable = dutyWritableSectionSchema;
 const identity = { section: writable, key: z.string().min(1).max(200) };
-const editSchema = z.discriminatedUnion("action", [
+export const dutySheetEditSchema = z.discriminatedUnion("action", [
   z.object({ ...identity, action: z.literal("upsert"), values: z.record(z.string().min(1).max(64), z.union([z.string().max(1000), z.number(), z.boolean()])) }).strict(),
   z.object({ section: z.enum(["workShifts", "calendarOverrides", "exceptions"]), key: identity.key, action: z.literal("remove") }).strict(),
 ]);
-const inputSchema = z.object({ operationId: z.uuid(), source: z.unknown(), expectedSourceHash: z.string().regex(/^[a-f0-9]{64}$/u), edits: z.array(editSchema).min(1).max(10) }).strict();
-export type DutySheetEdit = z.infer<typeof editSchema>;
+export const dutyWriteBindingSchema = z.object({ groupId: z.uuid(), id: z.uuid(), version: z.number().int().positive() }).strict();
+const inputSchema = z.object({ operationId: z.uuid(), source: z.unknown(), expectedSourceHash: z.string().regex(/^[a-f0-9]{64}$/u), edits: z.array(dutySheetEditSchema).min(1).max(10),
+  binding: dutyWriteBindingSchema.optional(), previewId: z.uuid().optional() }).strict();
+export type DutySheetEdit = z.infer<typeof dutySheetEditSchema>;
 export function parseDutySheetWrite(value: unknown) {
   const parsed = inputSchema.safeParse(value);
   if (!parsed.success) throw changeError("Некорректные параметры изменения таблицы");
@@ -48,7 +51,7 @@ export function planDutySheetWrite(rawInput: unknown, rawResponse: unknown) {
     const tab = input.source.mapping[edit.section];
     const index = dutySheetSections.indexOf(edit.section);
     const table = readDutySheetTables(input.source, response).tables[edit.section];
-    const existing = table.find((row) => rowKey(edit.section, row) === edit.key);
+    const existing = table.find((row) => dutySheetRowKey(edit.section, row) === edit.key);
     if (!existing && edit.action === "remove") throw changeError("Удаляемое исключение, смена или дата календаря не найдены");
     const rowIndex = existing ? existing.number - 1 : response.valueRanges[index].values.length;
     if (rowIndex > 5000) throw changeError("Достигнут предел 5000 строк на листе");
@@ -66,7 +69,7 @@ export function planDutySheetWrite(rawInput: unknown, rawResponse: unknown) {
     response.valueRanges[index].values[rowIndex] = row;
     if (edit.action === "upsert") {
       const cells = Object.fromEntries(Object.entries(tab.columns).map(([key, name]) => [key, row[headers.indexOf(name)]]));
-      if (rowKey(edit.section, { sheet: tab.sheet, number: rowIndex + 1, cells }) !== edit.key) throw changeError("Нельзя менять ID или дату строки; для новой записи укажите её постоянный ключ");
+      if (dutySheetRowKey(edit.section, { sheet: tab.sheet, number: rowIndex + 1, cells }) !== edit.key) throw changeError("Нельзя менять ID или дату строки; для новой записи укажите её постоянный ключ");
     }
   }
   for (const edit of input.edits) {
@@ -106,7 +109,7 @@ export function planDutySheetWrite(rawInput: unknown, rawResponse: unknown) {
 export function dutySheetDataHash(value: Pick<ReturnType<typeof previewDutySheetImport>, "data" | "history">): string {
   return hashDutyJson({ data: value.data, history: value.history });
 }
-function rowKey(section: DutySheetSection, row: DutySheetRow): string {
+export function dutySheetRowKey(section: DutySheetSection, row: DutySheetRow): string {
   const cells = row.cells;
   const value = (key: string) => String(cells[key] ?? "").trim();
   if (section === "residents" || section === "objects") return value("id");

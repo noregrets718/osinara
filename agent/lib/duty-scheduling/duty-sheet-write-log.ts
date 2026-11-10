@@ -5,15 +5,18 @@ import type { PrivateTelegramOwner } from "../family-context.js";
 import { DUTY_SHEET_WRITE_TOOL, type DutySheetWriteInput, type DutySheetWritePlan } from "./duty-sheet-change.js";
 import { hashDutyJson, type DutyApprovalEvidence } from "./duty-snapshot.js";
 import { dutyOwnerApprovalProof, requireDutyApproval, withDutyOwner } from "./duty-storage.js";
+import { requireDutyEditPreview } from "./duty-edit-previews.js";
+import { requireDutyWriteBinding } from "./duty-write-binding.js";
 
 export type DutySheetWriteState = "checking" | "writing" | "applied" | "conflict" | "failed" | "unknown" | "reviewed";
 type WriteRow = { id: string; family_id: string; created_by: string | null; request_hash: string; input: DutySheetWriteInput;
   state: DutySheetWriteState; plan: unknown; error_code: string | null; approval_evidence: unknown };
 export type DutySheetWriteResult = { operationId: string; state: DutySheetWriteState; completed: boolean; retryAllowed: false; plan: unknown; errorCode: string | null };
 
-function proof(auth: PrivateTelegramOwner, raw: unknown, evidence: DutyApprovalEvidence) {
+function proof(auth: PrivateTelegramOwner, input: DutySheetWriteInput, raw: unknown, evidence: DutyApprovalEvidence) {
   // The common guard accepts the same proof shape; this operation has its own tool name and exact input hash.
-  return dutyOwnerApprovalProof(auth, raw, evidence, DUTY_SHEET_WRITE_TOOL);
+  const previewId = input.previewId;
+  return dutyOwnerApprovalProof(auth, previewId ? { previewId } : raw, evidence, DUTY_SHEET_WRITE_TOOL);
 }
 function present(row: WriteRow): DutySheetWriteResult {
   if (hashDutyJson(row.input) !== row.request_hash) throw new AppError("AGENT_DUTY_SHEET_AUDIT_INVALID", "Реквизиты операции не совпадают с её контрольной суммой");
@@ -30,7 +33,7 @@ export const dutySheetWriteLog = {
     });
   },
   async claim(auth: PrivateTelegramOwner, input: DutySheetWriteInput, rawInput: unknown, evidence: DutyApprovalEvidence) {
-    const approval = proof(auth, rawInput, evidence);
+    const approval = proof(auth, input, rawInput, evidence);
     return withDutyOwner(auth, async (client) => {
       await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [`duty-sheet-operation:${input.operationId}`]);
       await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [`duty-sheet:${input.source.spreadsheetId}`]);
@@ -43,6 +46,8 @@ export const dutySheetWriteLog = {
         return { claimed: false, result: present(row) };
       }
       await requireDutyApproval(client, auth, approval);
+      await requireDutyEditPreview(client, auth, input);
+      await requireDutyWriteBinding(client, auth, input);
       const busy = await client.query("SELECT 1 FROM duty_sheet_writes WHERE spreadsheet_id = $1 AND state IN ('checking', 'writing', 'unknown')", [input.source.spreadsheetId]);
       if (busy.rowCount) throw new AppError("AGENT_DUTY_SHEET_BUSY", "Предыдущая запись ещё выполняется или требует сверки. Новая запись остановлена");
       const inserted = await client.query<WriteRow>(
@@ -55,7 +60,9 @@ export const dutySheetWriteLog = {
 
   async start(auth: PrivateTelegramOwner, input: DutySheetWriteInput, rawInput: unknown, evidence: DutyApprovalEvidence, plan: DutySheetWritePlan) {
     return withDutyOwner(auth, async (client) => {
-      await requireDutyApproval(client, auth, proof(auth, rawInput, evidence));
+      await requireDutyApproval(client, auth, proof(auth, input, rawInput, evidence));
+      await requireDutyEditPreview(client, auth, input, plan);
+      await requireDutyWriteBinding(client, auth, input);
       const saved = { cells: plan.cells, changes: plan.changes, expectedDataHash: plan.expectedDataHash };
       const updated = await client.query<WriteRow>(
         "UPDATE duty_sheet_writes SET state = 'writing', plan = $3::jsonb, write_started_at = now() WHERE id = $1 AND family_id = $2 AND state = 'checking' AND request_hash = $4 RETURNING *",
