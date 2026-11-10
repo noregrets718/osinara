@@ -7,7 +7,7 @@ import { hashDutyJson, type DutyApprovalEvidence } from "./duty-snapshot.js";
 import { dutyOwnerApprovalProof, requireDutyApproval, requireDutyGroup, withDutyOwner } from "./duty-storage.js";
 
 export const DUTY_SOURCE_TOOL = "configure_duty_sheet_source";
-const inputSchema = z.object({ operationId: z.uuid(), groupId: z.uuid(), expectedVersion: z.number().int().nonnegative(), source: z.unknown() }).strict();
+const inputSchema = z.object({ operationId: z.uuid(), groupId: z.uuid(), expectedVersion: z.number().int().nonnegative(), source: z.unknown(), readHash: z.string().regex(/^[a-f0-9]{64}$/u).optional() }).strict();
 export function parseDutySourceChange(raw: unknown) {
   const value = inputSchema.parse(raw);
   return { ...value, source: parseDutySheetSource(value.source) };
@@ -21,6 +21,29 @@ function present(row: SourceRow) {
 }
 
 export const dutySheetSourceRepository = {
+  async inspect(auth: PrivateTelegramOwner, groupId: string) {
+    const id = z.uuid().parse(groupId);
+    return withDutyOwner(auth, async (client) => {
+      const telegramChatId = await requireDutyGroup(client, auth.familyId, id);
+      const group = await client.query<{ title: string }>("SELECT title FROM telegram_groups WHERE id = $1", [id]);
+      const result = await client.query<SourceRow>("SELECT * FROM duty_sheet_sources WHERE group_id = $1 AND family_id = $2 ORDER BY version DESC LIMIT 1", [id, auth.familyId]);
+      return { group: { groupId: id, title: group.rows[0].title, telegramChatId }, configuration: result.rows[0] ? present(result.rows[0]) : null };
+    });
+  },
+
+  async findOperation(auth: PrivateTelegramOwner, raw: unknown) {
+    const input = parseDutySourceChange(raw);
+    return withDutyOwner(auth, async (client) => {
+      await requireDutyGroup(client, auth.familyId, input.groupId);
+      const result = await client.query<SourceRow>("SELECT * FROM duty_sheet_sources WHERE id = $1", [input.operationId]);
+      if (!result.rows[0]) return null;
+      if (result.rows[0].family_id !== auth.familyId || result.rows[0].request_hash !== hashDutyJson(input)) {
+        throw new AppError("AGENT_DUTY_SOURCE_OPERATION_CONFLICT", "ID настройки уже использован для других данных");
+      }
+      return present(result.rows[0]);
+    });
+  },
+
   async save(auth: PrivateTelegramOwner, raw: unknown, evidence: DutyApprovalEvidence) {
     const input = parseDutySourceChange(raw);
     const approval = dutyOwnerApprovalProof(auth, raw, evidence, DUTY_SOURCE_TOOL);
