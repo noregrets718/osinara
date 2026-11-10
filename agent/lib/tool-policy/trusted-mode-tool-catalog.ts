@@ -15,6 +15,8 @@ import yandexLavka from "../tools/yandex_lavka.js";
 import yandexTaxi from "../tools/yandex_taxi.js";
 
 import executeGoogleWorkspace from "../tools/execute_google_workspace.js";
+import configureDutySheetSource from "../tools/configure_duty_sheet_source.js";
+import inspectDutySheetSource from "../tools/inspect_duty_sheet_source.js";
 import exportMemory from "../tools/export_memory.js";
 import browserAct from "../tools/browser_act.js";
 import browserConfirm from "../tools/browser_confirm.js";
@@ -138,6 +140,8 @@ export const TRUSTED_MODE_TOOLS: ToolMap = {
 
 /** Owner administration and personal-only surfaces that require the owner's private chat. */
 export const PRIVATE_ONLY_TOOLS: ToolMap = {
+  configure_duty_sheet_source: configureDutySheetSource as unknown as AnyToolDefinition,
+  inspect_duty_sheet_source: inspectDutySheetSource as unknown as AnyToolDefinition,
   manage_duty_schedule: manageDutySchedule as unknown as AnyToolDefinition,
   export_memory: exportMemory as unknown as AnyToolDefinition,
   grocery_cart: groceryCart as unknown as AnyToolDefinition,

@@ -32,12 +32,12 @@ function names(input: Parameters<typeof buildModeToolSurface>[0]): string[] {
 }
 
 describe("trusted mode tool surfaces", () => {
-  it("keeps duty schedules in the interactive private root surface only", () => {
-    expect(buildModeToolSurface({ environment: "private" })).toHaveProperty("manage_duty_schedule");
-    expect(buildModeToolSurface({ environment: "family" })).not.toHaveProperty("manage_duty_schedule");
-    expect(buildModeToolSurface({ capabilities: new Set(), environment: "external" })).not.toHaveProperty("manage_duty_schedule");
-    expect(buildModeToolSurface({ environment: "private", scheduledRun: true })).not.toHaveProperty("manage_duty_schedule");
-    expect(buildSubagentToolSurface({ environment: "private" })).not.toHaveProperty("manage_duty_schedule");
+  it.each(["manage_duty_schedule", "inspect_duty_sheet_source", "configure_duty_sheet_source"])("keeps %s in the interactive private root surface only", (name) => {
+    expect(buildModeToolSurface({ environment: "private" })).toHaveProperty(name);
+    expect(buildModeToolSurface({ environment: "family" })).not.toHaveProperty(name);
+    expect(buildModeToolSurface({ capabilities: new Set(), environment: "external" })).not.toHaveProperty(name);
+    expect(buildModeToolSurface({ environment: "private", scheduledRun: true })).not.toHaveProperty(name);
+    expect(buildSubagentToolSurface({ environment: "private" })).not.toHaveProperty(name);
   });
   it("gives a private chat the shared tools plus owner administration only", () => {
     expect(names({ environment: "private" })).toEqual(

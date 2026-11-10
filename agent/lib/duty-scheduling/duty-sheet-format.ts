@@ -17,12 +17,12 @@ const layout = {
 export type DutySheetSection = keyof typeof layout;
 export const dutySheetSections = Object.freeze(Object.keys(layout) as DutySheetSection[]);
 const label = z.string().trim().min(1).max(100).refine((value) => !/\p{Cc}/u.test(value));
-const sourceSchema = z.object({
+export const dutySheetSourceSchema = z.object({
   spreadsheetId: z.string().regex(/^[A-Za-z0-9_-]{1,200}$/u),
   profileRef: z.string().min(1).max(300),
   mapping: z.record(z.enum(dutySheetSections), z.object({ sheet: label, columns: z.record(z.string(), label) }).strict()),
 }).strict();
-export type DutySheetSource = z.infer<typeof sourceSchema>;
+export type DutySheetSource = z.infer<typeof dutySheetSourceSchema>;
 export type DutySheetCell = string | number | boolean;
 export type DutySheetRow = { sheet: string; number: number; cells: Record<string, DutySheetCell | undefined> };
 
@@ -31,7 +31,7 @@ export function createDutySheetSource(spreadsheetId: string, profileRef: string)
 }
 
 export function parseDutySheetSource(value: unknown): DutySheetSource {
-  const parsed = sourceSchema.safeParse(value);
+  const parsed = dutySheetSourceSchema.safeParse(value);
   if (!parsed.success) throw sheetError("Некорректная настройка источника или названий столбцов");
   const source = parsed.data;
   const names = new Set<string>();
