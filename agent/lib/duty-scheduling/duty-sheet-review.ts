@@ -5,6 +5,10 @@ import { AppError } from "../app-error.js";
 import { requirePrivateTelegramOwner, type PrivateTelegramOwner } from "../family-context.js";
 import { dutySheetDataHash } from "./duty-sheet-change.js";
 import { readDutySheet } from "./duty-sheet-reader.js";
+import { readDutySheetTables } from "./duty-sheet-format.js";
+import { requireDutyReviewPreview } from "./duty-review-previews.js";
+import { dutySheetReviewInputSchema, type DutySheetReviewInput } from "./duty-review-input.js";
+export { type DutySheetReviewInput } from "./duty-review-input.js";
 import { dutySheetWriteLog } from "./duty-sheet-write-log.js";
 import { dutySheetWorkerContext, withDutySheetWorker, type DutySheetWorker } from "./duty-sheet-worker.js";
 import { dutyApprovalEvidenceSchema, hashDutyJson, type DutyApprovalEvidence } from "./duty-snapshot.js";
@@ -12,9 +16,7 @@ import { dutyOwnerApprovalProof, requireDutyApproval, withDutyOwner } from "./du
 
 export const DUTY_SHEET_REVIEW_TOOL = "resolve_duty_sheet_write";
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);
-const inputSchema = z.object({ operationId: z.uuid(), profileRef: z.string().min(1).max(300).optional(), reviewHash: hash,
-  decision: z.enum(["cancel_unstarted", "accept_current"]), acknowledgeUncertainOutcome: z.literal(true).optional() }).strict();
-export type DutySheetReviewInput = z.infer<typeof inputSchema>;
+const inputSchema = dutySheetReviewInputSchema;
 const planSchema = z.object({ expectedDataHash: hash, cells: z.array(z.object({ range: z.string(), before: z.union([z.string(), z.number(), z.boolean()]), after: z.union([z.string(), z.number(), z.boolean()]) })) });
 type Dependencies = { owner: typeof requirePrivateTelegramOwner; read: typeof readDutySheet; log: typeof dutySheetWriteLog; withWorker?: typeof withDutySheetWorker };
 type SavedReview = { request_hash: string; input: DutySheetReviewInput; snapshot: DutySheetReviewSnapshot; resolved_at: Date };
@@ -24,14 +26,25 @@ export type DutySheetReviewSnapshot = Awaited<ReturnType<ReturnType<typeof creat
 export function createDutySheetReviewer(deps: Dependencies) {
   async function observe(auth: PrivateTelegramOwner, id: string, ctx: ToolContext, worker: DutySheetWorker, profileRef?: string) {
     const record = await deps.log.reviewRecord(auth, id);
-    if (!["checking", "writing", "unknown"].includes(record.state)) throw new AppError("AGENT_DUTY_SHEET_REVIEW_NOT_NEEDED", "Для этого состояния сверка не требуется");
+    const state = record.state;
+    if (state !== "checking" && state !== "writing" && state !== "unknown") throw new AppError("AGENT_DUTY_SHEET_REVIEW_NOT_NEEDED", "Для этого состояния сверка не требуется");
     const source = { ...record.input.source, profileRef: profileRef ?? record.input.source.profileRef };
     const plan = record.state === "checking" ? null : planSchema.parse(record.plan);
     const loaded = record.state === "checking" ? null : await deps.read(source, dutySheetWorkerContext(ctx, worker), undefined, { formulas: true });
     await worker.check();
     const observation = loaded ? { sourceHash: loaded.source.contentHash, dataHash: dutySheetDataHash(loaded), data: loaded.data, history: loaded.history } : null;
-    const snapshot = { operationId: id, familyId: auth.familyId, ownerUserId: auth.userId, state: record.state, requestHash: record.request_hash,
-      source, plannedCells: plan?.cells ?? [], observation,
+    const tables = loaded ? readDutySheetTables(source, loaded.response).response.valueRanges : [];
+    const observedCells = (plan?.cells ?? []).map((cell) => {
+      const match = /^'(.*)'!([A-Z])(\d+)$/u.exec(cell.range);
+      const tab = match && tables.find((row) => {
+        const title = row.range.slice(0, row.range.lastIndexOf("!"));
+        return (title.startsWith("'") ? title.slice(1, -1).replaceAll("''", "'") : title) === match[1].replaceAll("''", "'");
+      });
+      if (!match || !tab || Number(match[3]) < 2 || Number(match[3]) > 5001) throw new AppError("AGENT_DUTY_SHEET_REVIEW_INVALID", "Не удалось сопоставить ячейку плана с прочитанным листом");
+      return { ...cell, current: tab.values[Number(match[3]) - 1]?.[match[2].charCodeAt(0) - 65] ?? "" };
+    });
+    const snapshot = { operationId: id, familyId: auth.familyId, ownerUserId: auth.userId, state, requestHash: record.request_hash,
+      source, plannedCells: plan?.cells ?? [], observedCells, observation,
       classification: !observation ? "not_sent" as const : observation.dataHash === plan?.expectedDataHash ? "matches_expected" as const : "differs_from_expected" as const };
     return withDutyOwner(auth, async () => ({ ...snapshot, reviewHash: hashDutyJson(snapshot) }));
   }
@@ -49,10 +62,11 @@ export function createDutySheetReviewer(deps: Dependencies) {
     async resolve(raw: unknown, rawEvidence: DutyApprovalEvidence, ctx: ToolContext) {
       const auth = deps.owner(ctx);
       const input = inputSchema.parse(raw);
-      const approval = dutyOwnerApprovalProof(auth, raw, dutyApprovalEvidenceSchema.parse(rawEvidence), DUTY_SHEET_REVIEW_TOOL);
+      const approval = dutyOwnerApprovalProof(auth, input.previewId ? { previewId: input.previewId } : raw, dutyApprovalEvidenceSchema.parse(rawEvidence), DUTY_SHEET_REVIEW_TOOL);
       await deps.log.reviewRecord(auth, input.operationId);
       return (deps.withWorker ?? withDutySheetWorker)(input.operationId, async (worker) => {
         const old = await withDutyOwner(auth, async (client) => {
+          await requireDutyReviewPreview(client, auth, input);
           const result = await client.query<SavedReview>("SELECT * FROM duty_sheet_reviews WHERE operation_id = $1 AND family_id = $2", [input.operationId, auth.familyId]);
           if (!result.rows[0]) await requireDutyApproval(client, auth, approval);
           return result.rows[0];

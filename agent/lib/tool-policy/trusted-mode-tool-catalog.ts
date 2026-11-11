@@ -18,6 +18,8 @@ import executeGoogleWorkspace from "../tools/execute_google_workspace.js";
 import configureDutySheetSource from "../tools/configure_duty_sheet_source.js";
 import applyDutySheetChanges from "../tools/apply_duty_sheet_changes.js";
 import inspectDutySheetChanges from "../tools/inspect_duty_sheet_changes.js";
+import inspectDutySheetWrite from "../tools/inspect_duty_sheet_write.js";
+import resolveDutySheetWrite from "../tools/resolve_duty_sheet_write.js";
 import inspectDutySheetSource from "../tools/inspect_duty_sheet_source.js";
 import exportMemory from "../tools/export_memory.js";
 import browserAct from "../tools/browser_act.js";
@@ -142,6 +144,8 @@ export const TRUSTED_MODE_TOOLS: ToolMap = {
 
 /** Owner administration and personal-only surfaces that require the owner's private chat. */
 export const PRIVATE_ONLY_TOOLS: ToolMap = {
+  inspect_duty_sheet_write: inspectDutySheetWrite as unknown as AnyToolDefinition,
+  resolve_duty_sheet_write: resolveDutySheetWrite as unknown as AnyToolDefinition,
   apply_duty_sheet_changes: applyDutySheetChanges as unknown as AnyToolDefinition,
   inspect_duty_sheet_changes: inspectDutySheetChanges as unknown as AnyToolDefinition,
   configure_duty_sheet_source: configureDutySheetSource as unknown as AnyToolDefinition,
