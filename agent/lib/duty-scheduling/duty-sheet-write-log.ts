@@ -24,6 +24,13 @@ function present(row: WriteRow): DutySheetWriteResult {
 }
 
 export const dutySheetWriteLog = {
+  async pending(auth: PrivateTelegramOwner, offset: number) {
+    return withDutyOwner(auth, async (client) => {
+      const result = await client.query<{ id: string; state: DutySheetWriteState; spreadsheet_id: string; profile_ref: string; error_code: string | null; created_at: Date }>(
+        "SELECT id,state,spreadsheet_id,profile_ref,error_code,created_at FROM duty_sheet_writes WHERE family_id=$1 AND state IN ('checking','writing','unknown') ORDER BY created_at,id LIMIT 51 OFFSET $2", [auth.familyId, offset]);
+      return { operations: result.rows.slice(0, 50).map((row) => ({ operationId: row.id, state: row.state, spreadsheetId: row.spreadsheet_id, profileRef: row.profile_ref, errorCode: row.error_code, createdAt: row.created_at.toISOString() })), nextOffset: result.rows.length > 50 ? offset + 50 : null };
+    });
+  },
   async reviewRecord(auth: PrivateTelegramOwner, id: string) {
     return withDutyOwner(auth, async (client) => {
       const result = await client.query<WriteRow>("SELECT * FROM duty_sheet_writes WHERE id = $1 AND family_id = $2", [id, auth.familyId]);
