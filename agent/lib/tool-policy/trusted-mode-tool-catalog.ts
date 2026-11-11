@@ -17,6 +17,7 @@ import yandexTaxi from "../tools/yandex_taxi.js";
 import executeGoogleWorkspace from "../tools/execute_google_workspace.js";
 import configureDutySheetSource from "../tools/configure_duty_sheet_source.js";
 import applyDutySheetChanges from "../tools/apply_duty_sheet_changes.js";
+import approveDutySchedule from "../tools/approve_duty_schedule.js";
 import inspectDutySheetChanges from "../tools/inspect_duty_sheet_changes.js";
 import inspectDutySheetWrite from "../tools/inspect_duty_sheet_write.js";
 import resolveDutySheetWrite from "../tools/resolve_duty_sheet_write.js";
@@ -144,6 +145,7 @@ export const TRUSTED_MODE_TOOLS: ToolMap = {
 
 /** Owner administration and personal-only surfaces that require the owner's private chat. */
 export const PRIVATE_ONLY_TOOLS: ToolMap = {
+  approve_duty_schedule: approveDutySchedule as unknown as AnyToolDefinition,
   inspect_duty_sheet_write: inspectDutySheetWrite as unknown as AnyToolDefinition,
   resolve_duty_sheet_write: resolveDutySheetWrite as unknown as AnyToolDefinition,
   apply_duty_sheet_changes: applyDutySheetChanges as unknown as AnyToolDefinition,

@@ -31,6 +31,29 @@ function stale(): AppError {
   return new AppError("AGENT_DUTY_VERSION_STALE", "График уже изменился: прочитайте последнюю версию и подтвердите её заново");
 }
 
+/** One locked target check serves both the trusted confirmation window and execution. */
+async function approvalTarget(client: PoolClient, auth: PrivateTelegramOwner, input: DutyApprovalInput) {
+  const selected = await client.query<DutyVersionRow>(
+    `SELECT ${DUTY_VERSION_COLUMNS} FROM duty_schedule_versions WHERE id = $1 AND family_id = $2`, [input.id, auth.familyId]);
+  const row = selected.rows[0];
+  if (!row) throw new AppError("AGENT_DUTY_VERSION_NOT_FOUND", "Сохранённый график не найден");
+  const chatId = await requireDutyGroup(client, auth.familyId, row.group_id);
+  if (chatId !== row.telegram_chat_id) throw stale();
+  await lockDutyDay(client, auth.familyId, chatId, row.date);
+  const refreshed = await client.query<DutyVersionRow>(`SELECT ${DUTY_VERSION_COLUMNS} FROM duty_schedule_versions WHERE id = $1 FOR UPDATE`, [row.id]);
+  const current = refreshed.rows[0], stored = presentDutyVersion(current);
+  if (stored.contentHash !== input.contentHash || stored.baseApprovedId !== input.expectedApprovedId) throw stale();
+  return { current, stored, chatId };
+}
+async function requireApprovable(client: PoolClient, auth: PrivateTelegramOwner, stored: ReturnType<typeof presentDutyVersion>, input: DutyApprovalInput, chatId: string) {
+  const latest = await client.query<{ version: number }>(
+    "SELECT max(version) AS version FROM duty_schedule_versions WHERE family_id = $1 AND telegram_chat_id = $2 AND duty_date = $3::date",
+    [auth.familyId, chatId, stored.date]);
+  if (stored.status !== "draft" || latest.rows[0].version !== stored.version ||
+      await currentApproved(client, auth.familyId, chatId, stored.date) !== input.expectedApprovedId) throw stale();
+  if (!stored.snapshot.draft.canApprove) throw new AppError("AGENT_DUTY_INCOMPLETE", "По этой версии правил неполный график нельзя утвердить");
+}
+
 export const dutyScheduleRepository = {
   async save(auth: PrivateTelegramOwner, raw: SaveDutyInput) {
     const input = saveSchema.parse(raw);
@@ -119,31 +142,25 @@ export const dutyScheduleRepository = {
     });
   },
 
+  async approvalPreview(auth: PrivateTelegramOwner, raw: DutyApprovalInput) {
+    const input = dutyApprovalInputSchema.parse(raw);
+    return transaction(auth, async (client) => {
+      const { stored, chatId } = await approvalTarget(client, auth, input);
+      await requireApprovable(client, auth, stored, input, chatId);
+      const group = await client.query<{ title: string }>("SELECT title FROM telegram_groups WHERE id=$1", [stored.snapshot.destination.groupId]);
+      const previous = input.expectedApprovedId ? await client.query<{ version: number }>("SELECT version FROM duty_schedule_versions WHERE id=$1 AND family_id=$2", [input.expectedApprovedId, auth.familyId]) : null;
+      return { version: stored, group: { title: group.rows[0].title, telegramChatId: chatId }, previousVersion: previous?.rows[0]?.version ?? null };
+    });
+  },
+
   async approve(auth: PrivateTelegramOwner, input: DutyApprovalInput, rawEvidence: DutyApprovalEvidence) {
     const parsed = dutyApprovalInputSchema.parse(input);
     const evidence = dutyApprovalEvidenceSchema.parse(rawEvidence);
     const proof = dutyApprovalProof(auth, input, evidence);
     return transaction(auth, async (client) => {
-      const selected = await client.query<DutyVersionRow>(
-        `SELECT ${DUTY_VERSION_COLUMNS} FROM duty_schedule_versions WHERE id = $1 AND family_id = $2`, [parsed.id, auth.familyId],
-      );
-      const row = selected.rows[0];
-      if (!row) throw new AppError("AGENT_DUTY_VERSION_NOT_FOUND", "Сохранённый график не найден");
-      const chatId = await requireDutyGroup(client, auth.familyId, row.group_id);
-      if (chatId !== row.telegram_chat_id) throw stale();
-      await lockDutyDay(client, auth.familyId, chatId, row.date);
-      const refreshed = await client.query<DutyVersionRow>(`SELECT ${DUTY_VERSION_COLUMNS} FROM duty_schedule_versions WHERE id = $1 FOR UPDATE`, [row.id]);
-      const current = refreshed.rows[0];
-      const stored = presentDutyVersion(current);
-      if (stored.contentHash !== parsed.contentHash || stored.baseApprovedId !== parsed.expectedApprovedId) throw stale();
+      const { current, stored, chatId } = await approvalTarget(client, auth, parsed);
       if (stored.status === "approved" && hashDutyJson(current.approval_evidence) === hashDutyJson(proof)) return stored;
-      const latest = await client.query<{ version: number }>(
-        "SELECT max(version) AS version FROM duty_schedule_versions WHERE family_id = $1 AND telegram_chat_id = $2 AND duty_date = $3::date",
-        [auth.familyId, chatId, row.date],
-      );
-      if (stored.status !== "draft" || latest.rows[0].version !== stored.version ||
-          await currentApproved(client, auth.familyId, chatId, row.date) !== parsed.expectedApprovedId) throw stale();
-      if (!stored.snapshot.draft.canApprove) throw new AppError("AGENT_DUTY_INCOMPLETE", "По этой версии правил неполный график нельзя утвердить");
+      await requireApprovable(client, auth, stored, parsed, chatId);
       await requireDutyApproval(client, auth, proof);
       await client.query("UPDATE duty_schedule_versions SET status = 'superseded' WHERE id = $1 AND family_id = $2 AND status = 'approved'", [parsed.expectedApprovedId, auth.familyId]);
       const updated = await client.query<DutyVersionRow>(
