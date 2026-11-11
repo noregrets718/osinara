@@ -21,6 +21,7 @@ import {
 import { AppError } from "../app-error.js";
 import { loadDutySourceApproval } from "../duty-scheduling/duty-source-approval.js";
 import { loadDutyEditApproval } from "../duty-scheduling/duty-edit-approval.js";
+import { loadDutyReviewApproval } from "../duty-scheduling/duty-review-approval.js";
 import { clipText, flattenDisplayText } from "../display-text.js";
 import type { BrowserConfirmApprovalSubject } from "../browser/browser-tools-production.js";
 import { loadBrowserConfirmApproval } from "../browser/browser-tools-production.js";
@@ -46,6 +47,7 @@ import {
 } from "./approval-message.js";
 
 interface ApprovalPresentationDependencies {
+  findDutyReview?(input: unknown, ctx: Pick<SessionContext, "session">): Promise<{ prompt: string; approveLabel: string }>;
   findDutyEdits?(input: unknown, ctx: Pick<SessionContext, "session">): Promise<string>;
   findDutySource?(input: unknown, ctx: Pick<SessionContext, "session">): Promise<string>;
   findBrowserConfirm(input: { epoch: string; n: number }, ctx: Pick<SessionContext, "session">): Promise<BrowserConfirmApprovalSubject>;
@@ -254,6 +256,12 @@ export function createTelegramApprovalPresenter(
 ): TelegramApprovalPresenter {
   return async (request, ctx) => {
     const localized = localizeTelegramInputRequest(request);
+    if (request.display === "confirmation" && request.action.toolName === "resolve_duty_sheet_write") {
+      if (!dependencies.findDutyReview) throw new AppError("AGENT_APPROVAL_SUBJECT_INVALID", "Не удалось показать решение по сверке");
+      const subject = await dependencies.findDutyReview(request.action.input, ctx);
+      return { ...localized, prompt: subject.prompt,
+        options: localized.options?.map((option) => ({ ...option, label: option.id === "approve" ? subject.approveLabel : option.label })) };
+    }
     if (request.display === "confirmation" && request.action.toolName === "apply_duty_sheet_changes") {
       if (!dependencies.findDutyEdits) throw new AppError("AGENT_APPROVAL_SUBJECT_INVALID", "Не удалось показать подтверждаемые правки");
       return { ...localized, prompt: await dependencies.findDutyEdits(request.action.input, ctx),
@@ -389,6 +397,7 @@ export function createTelegramApprovalPresenter(
 }
 
 export const presentTelegramApproval = createTelegramApprovalPresenter({
+  findDutyReview: loadDutyReviewApproval,
   findDutyEdits: loadDutyEditApproval,
   findDutySource: loadDutySourceApproval,
   findBrowserConfirm: loadBrowserConfirmApproval,

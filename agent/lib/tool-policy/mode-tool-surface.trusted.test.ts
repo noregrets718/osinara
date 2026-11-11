@@ -32,7 +32,7 @@ function names(input: Parameters<typeof buildModeToolSurface>[0]): string[] {
 }
 
 describe("trusted mode tool surfaces", () => {
-  it.each(["manage_duty_schedule", "inspect_duty_sheet_source", "configure_duty_sheet_source", "inspect_duty_sheet_changes", "apply_duty_sheet_changes"])("keeps %s in the interactive private root surface only", (name) => {
+  it.each(["manage_duty_schedule", "inspect_duty_sheet_source", "configure_duty_sheet_source", "inspect_duty_sheet_changes", "apply_duty_sheet_changes", "inspect_duty_sheet_write", "resolve_duty_sheet_write"])("keeps %s in the interactive private root surface only", (name) => {
     expect(buildModeToolSurface({ environment: "private" })).toHaveProperty(name);
     expect(buildModeToolSurface({ environment: "family" })).not.toHaveProperty(name);
     expect(buildModeToolSurface({ capabilities: new Set(), environment: "external" })).not.toHaveProperty(name);
