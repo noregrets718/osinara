@@ -48,6 +48,7 @@ export function dutyOwnerView(stored: StoredDutyVersion) {
     rulesVersion: draft.rulesVersion, configuration: stored.snapshot.source ?? null,
     complete: draft.complete, canApprove: draft.canApprove, filledSlots: draft.filledSlots, requiredSlots: draft.requiredSlots,
     unfilledSlots: draft.unfilledSlots, objects, missingShifts, previewText: lines.join("\n"),
+    approvalInput: stored.status === "draft" && draft.canApprove ? { id: stored.id, contentHash: stored.contentHash, expectedApprovedId: stored.baseApprovedId } : null,
     publicationPerformed: false as const, approvalPerformed: false as const };
   if (Buffer.byteLength(JSON.stringify(result)) > 128 * 1024) throw new AppError("AGENT_DUTY_PREVIEW_TOO_LARGE", "График слишком велик для одного просмотра");
   return result;

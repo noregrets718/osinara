@@ -16,6 +16,7 @@ const AGENT_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
 const EXPECTED_TOOL_MODULES = [
   "apply_duty_sheet_changes.ts",
+  "approve_duty_schedule.ts",
   "browser_act.ts",
   "browser_confirm.ts",
   "browser_look.ts",
